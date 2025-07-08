@@ -542,9 +542,7 @@ const CoursesView: React.FC = () => {
                                   const result = assignmentResults[assignment.id];
                                   const isOverdue = isAssignmentOverdue(assignment);
                                   const timeLeft = getTimeRemaining(assignment.dueDate);
-                                  const submissions = submission ? [submission] : [];
-                                  const finalSubmissions = submissions.filter(s => s.isSubmitted);
-                                  const canSubmit = canSubmitAssignment(assignment, finalSubmissions);
+                                  const canSubmit = canSubmitAssignment(assignment, []);
                                   const canEdit = canEditAssignment(assignment);
                                   const deadlinePassed = result?.deadlinePassed || false;
 
@@ -569,16 +567,19 @@ const CoursesView: React.FC = () => {
                                                 <Clock className="h-3 w-3 mr-1" />
                                                 {timeLeft}
                                               </span>
-                                              {submission?.isSubmitted && deadlinePassed && submission.score !== undefined && (
+                                              {submission?.isSubmitted && deadlinePassed && submission.score !== undefined ? (
                                                 <span className="text-accent-400">
                                                   Score: {submission.score}%
                                                 </span>
-                                              )}
-                                              {submission && !submission.isSubmitted && (
+                                              ) : submission?.isSubmitted && !deadlinePassed ? (
+                                                <span className="text-blue-400">
+                                                  Submitted - Results pending
+                                                </span>
+                                              ) : submission && !submission.isSubmitted ? (
                                                 <span className="text-blue-400">
                                                   Draft saved
                                                 </span>
-                                              )}
+                                              ) : null}
                                             </div>
                                           </div>
                                         </div>
@@ -596,15 +597,6 @@ const CoursesView: React.FC = () => {
                                                   >
                                                     View Results
                                                   </Button>
-                                                  {canSubmit && deadlinePassed && (
-                                                    <Button
-                                                      size="sm"
-                                                      onClick={() => handleAssignmentSelect(assignment)}
-                                                      icon={<ArrowRight className="h-4 w-4" />}
-                                                    >
-                                                      Retake
-                                                    </Button>
-                                                  )}
                                                 </div>
                                               ) : submission && !submission.isSubmitted ? (
                                                 <div className="flex items-center space-x-2">
@@ -618,14 +610,16 @@ const CoursesView: React.FC = () => {
                                                   </Button>
                                                 </div>
                                               ) : (
-                                                <Button
-                                                  size="sm"
-                                                  onClick={() => handleAssignmentSelect(assignment)}
-                                                  icon={<ArrowRight className="h-4 w-4" />}
-                                                  disabled={!canSubmit}
-                                                >
-                                                  {canSubmit ? 'Start' : 'Unavailable'}
-                                                </Button>
+                                                <div className="flex items-center space-x-2">
+                                                  <Button
+                                                    size="sm"
+                                                    onClick={() => handleAssignmentSelect(assignment)}
+                                                    icon={<ArrowRight className="h-4 w-4" />}
+                                                    disabled={!canSubmit}
+                                                  >
+                                                    {canSubmit ? 'Start' : 'Unavailable'}
+                                                  </Button>
+                                                </div>
                                               )}
                                             </>
                                           ) : (
@@ -643,7 +637,10 @@ const CoursesView: React.FC = () => {
                                       {isOverdue && !submission?.isSubmitted && (
                                         <div className="mt-3 flex items-center text-red-400 text-sm">
                                           <AlertTriangle className="h-4 w-4 mr-1" />
-                                          This assignment is overdue
+                                          {assignment.allowLateSubmission 
+                                            ? 'This assignment is past due date (late penalty may apply)'
+                                            : 'This assignment is overdue and no longer accepts submissions'
+                                          }
                                         </div>
                                       )}
                                     </div>

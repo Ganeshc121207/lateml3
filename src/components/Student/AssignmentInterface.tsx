@@ -276,6 +276,14 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
 
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-2">
+                <Award className="w-5 h-5 text-gray-500" />
+                <span className="font-medium text-gray-700">Points</span>
+              </div>
+              <p className="text-gray-600">{assignment.totalPoints} points</p>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
                 <Target className="w-5 h-5 text-gray-500" />
                 <span className="font-medium text-gray-700">Questions</span>
               </div>
@@ -291,23 +299,22 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
                 {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No due date'}
               </p>
             </div>
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Award className="w-5 h-5 text-gray-500" />
-                <span className="font-medium text-gray-700">Points</span>
-              </div>
-              <p className="text-gray-600">{assignment.totalPoints} points</p>
-            </div>
           </div>
 
           {isOverdue && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
-                <span className="font-medium text-red-700">Assignment Overdue</span>
+                <span className="font-medium text-red-700">
+                  {assignment.allowLateSubmission ? 'Assignment Past Due Date' : 'Assignment Overdue'}
+                </span>
               </div>
-              <p className="text-red-600 mt-1">This assignment is past its due date.</p>
+              <p className="text-red-600 mt-1">
+                {assignment.allowLateSubmission 
+                  ? 'Late submissions are allowed but may incur penalties.'
+                  : 'This assignment is past its due date and no longer accepts submissions.'
+                }
+              </p>
             </div>
           )}
 
@@ -318,7 +325,7 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
             </Button>
             <Button 
               onClick={handleStartAssignment}
-              disabled={isOverdue || !canSubmit}
+              disabled={!canSubmit}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Start Assignment
@@ -330,6 +337,11 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
   }
 
   if (showResults && assignmentResult) {
+    const now = new Date();
+    const dueDate = new Date(assignment.dueDate);
+    const deadlinePassed = now > dueDate;
+    const canViewAnswers = deadlinePassed && assignment.showAnswersAfterDeadline;
+
     return (
       <div className="max-w-4xl mx-auto p-6">
         <motion.div
@@ -339,44 +351,54 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
         >
           <div className="text-center mb-8">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              assignmentResult.passed ? 'bg-green-100' : 'bg-red-100'
+              deadlinePassed && assignmentResult.submission.score !== undefined && assignmentResult.submission.score >= 70 
+                ? 'bg-green-100' : 'bg-blue-100'
             }`}>
-              {assignmentResult.passed ? (
+              {deadlinePassed && assignmentResult.submission.score !== undefined && assignmentResult.submission.score >= 70 ? (
                 <CheckCircle className="w-8 h-8 text-green-600" />
               ) : (
-                <XCircle className="w-8 h-8 text-red-600" />
+                <Clock className="w-8 h-8 text-blue-600" />
               )}
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Assignment Results</h1>
             <p className="text-gray-600">{assignment.title}</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900 mb-1">
-                {assignmentResult.score}/{assignment.totalPoints}
+          {deadlinePassed ? (
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {assignmentResult.submission.score || 0}/{assignment.totalPoints}
+                </div>
+                <p className="text-gray-600">Score</p>
               </div>
-              <p className="text-gray-600">Score</p>
-            </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900 mb-1">
-                {Math.round(assignmentResult.percentage)}%
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {assignmentResult.submission.score ? Math.round((assignmentResult.submission.score / assignment.totalPoints) * 100) : 0}%
+                </div>
+                <p className="text-gray-600">Percentage</p>
               </div>
-              <p className="text-gray-600">Percentage</p>
-            </div>
 
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className={`text-2xl font-bold mb-1 ${
-                assignmentResult.passed ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {assignmentResult.passed ? 'PASSED' : 'FAILED'}
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  SUBMITTED
+                </div>
+                <p className="text-gray-600">Status</p>
               </div>
-              <p className="text-gray-600">Status</p>
             </div>
-          </div>
+          ) : (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 text-center">
+              <Clock className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">Assignment Submitted</h3>
+              <p className="text-blue-800">
+                Your assignment has been submitted successfully. Results and feedback will be available after the due date: 
+                <strong> {new Date(assignment.dueDate).toLocaleString()}</strong>
+              </p>
+            </div>
+          )}
 
-          {assignmentResult.feedback && (
+          {assignmentResult.submission.feedback && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="font-medium text-blue-900 mb-2">Instructor Feedback</h3>
               <p className="text-blue-800">{assignmentResult.submission.feedback}</p>
@@ -388,12 +410,138 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Course
             </Button>
-            {onRetake && assignment.allowRetakes && (
+            {!deadlinePassed && canEdit && (
               <Button onClick={onRetake} className="bg-blue-600 hover:bg-blue-700">
-                Retake Assignment
+                Edit Assignment
               </Button>
             )}
           </div>
+
+          {canViewAnswers && (
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Question Review</h3>
+              
+              <div className="space-y-6">
+                {assignment.questions.map((question, index) => {
+                  const userAnswer = assignmentResult.submission.answers[question.id];
+                  const isCorrect = question.type === 'multiple-choice' 
+                    ? userAnswer === question.correctAnswer
+                    : question.type === 'short-answer'
+                    ? userAnswer?.toString().toLowerCase().trim() === question.correctAnswer?.toString().toLowerCase().trim()
+                    : undefined;
+
+                  return (
+                    <div key={question.id} className="bg-gray-50 rounded-lg p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            isCorrect === true ? 'bg-green-100' : isCorrect === false ? 'bg-red-100' : 'bg-gray-100'
+                          }`}>
+                            {isCorrect === true ? (
+                              <CheckCircle className="h-5 w-5 text-green-600" />
+                            ) : isCorrect === false ? (
+                              <XCircle className="h-5 w-5 text-red-600" />
+                            ) : (
+                              <span className="text-gray-600 font-medium">{index + 1}</span>
+                            )}
+                          </div>
+                          <span className="text-sm font-medium text-gray-600">Question {index + 1}</span>
+                        </div>
+                        <span className="text-sm text-gray-500">{question.points} pts</span>
+                      </div>
+
+                      <h4 className="text-gray-900 font-medium mb-4">{question.text}</h4>
+
+                      {question.type === 'multiple-choice' && question.options && (
+                        <div className="space-y-2 mb-4">
+                          {question.options.map((option, optIndex) => {
+                            const isUserAnswer = userAnswer === optIndex;
+                            const isCorrectAnswer = question.correctAnswer === optIndex;
+                            
+                            return (
+                              <div
+                                key={optIndex}
+                                className={`p-3 rounded-lg border-2 ${
+                                  isCorrectAnswer
+                                    ? 'border-green-500 bg-green-50'
+                                    : isUserAnswer && !isCorrectAnswer
+                                    ? 'border-red-500 bg-red-50'
+                                    : 'border-gray-200'
+                                }`}
+                              >
+                                <div className="flex items-center">
+                                  <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                                    isCorrectAnswer
+                                      ? 'border-green-500 bg-green-500'
+                                      : isUserAnswer && !isCorrectAnswer
+                                      ? 'border-red-500 bg-red-500'
+                                      : 'border-gray-300'
+                                  }`}>
+                                    {(isCorrectAnswer || (isUserAnswer && !isCorrectAnswer)) && (
+                                      <div className="w-2 h-2 rounded-full bg-white mx-auto mt-0.5" />
+                                    )}
+                                  </div>
+                                  <span className={`${
+                                    isCorrectAnswer
+                                      ? 'text-green-700'
+                                      : isUserAnswer && !isCorrectAnswer
+                                      ? 'text-red-700'
+                                      : 'text-gray-700'
+                                  }`}>
+                                    {option}
+                                  </span>
+                                  {isCorrectAnswer && (
+                                    <span className="ml-2 text-xs text-green-600 font-medium">Correct</span>
+                                  )}
+                                  {isUserAnswer && !isCorrectAnswer && (
+                                    <span className="ml-2 text-xs text-red-600 font-medium">Your Answer</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {(question.type === 'short-answer' || question.type === 'essay') && (
+                        <div className="space-y-3 mb-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">Your Answer:</label>
+                            <div className={`p-3 rounded-lg border-2 ${
+                              isCorrect === true ? 'border-green-500 bg-green-50' : 
+                              isCorrect === false ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50'
+                            }`}>
+                              <span className={
+                                isCorrect === true ? 'text-green-700' : 
+                                isCorrect === false ? 'text-red-700' : 'text-gray-700'
+                              }>
+                                {userAnswer || 'No answer provided'}
+                              </span>
+                            </div>
+                          </div>
+                          {isCorrect === false && question.correctAnswer && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-600 mb-1">Correct Answer:</label>
+                              <div className="p-3 rounded-lg border-2 border-green-500 bg-green-50">
+                                <span className="text-green-700">{question.correctAnswer}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {question.explanation && (
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <h5 className="text-sm font-medium text-blue-900 mb-2">Explanation:</h5>
+                          <p className="text-blue-800 text-sm">{question.explanation}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </motion.div>
       </div>
     );
