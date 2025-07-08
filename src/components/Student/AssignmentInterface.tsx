@@ -448,7 +448,7 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
                 {assignment.questions.map((question, index) => {
                   const userAnswer = assignmentResult.submission.answers[question.id];
                   const isCorrect = question.type === 'multiple-choice' 
-                    ? userAnswer === question.correctAnswer
+                    ? userAnswer === question.options?.[question.correctAnswer as number]
                     : question.type === 'short-answer'
                     ? userAnswer?.toString().toLowerCase().trim() === question.correctAnswer?.toString().toLowerCase().trim()
                     : undefined;
@@ -479,7 +479,7 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
                         <div className="space-y-2 mb-4">
                           {question.options.map((option, optIndex) => {
                             const isUserAnswer = userAnswer === optIndex;
-                            const isCorrectAnswer = question.correctAnswer === optIndex;
+                            const isCorrectAnswer = (question.correctAnswer as number) === optIndex;
                             
                             return (
                               <div

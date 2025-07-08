@@ -213,7 +213,7 @@ const CoursesView: React.FC = () => {
       };
 
       // Only auto-grade if it's a final submission and deadline has passed
-      if (isFinal && now > dueDate) {
+      if (isFinal) {
         const score = await autoGradeSubmission(submission, selectedAssignment);
         submission.score = score;
       }

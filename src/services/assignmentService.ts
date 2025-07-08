@@ -237,15 +237,15 @@ export const autoGradeSubmission = async (submission: AssignmentSubmission, assi
     });
     
     if (question.type === 'multiple-choice') {
-      // For multiple choice, compare the selected option text with the correct answer
-      const correctOptionIndex = question.correctAnswer;
-      const correctOptionText = question.options?.[correctOptionIndex as number];
+      // For multiple choice, the userAnswer is the option text, correctAnswer is the index
+      const correctOptionIndex = question.correctAnswer as number;
+      const correctOptionText = question.options?.[correctOptionIndex];
       
       if (userAnswer === correctOptionText) {
         earnedPoints += question.points;
         console.log(`Correct! Earned ${question.points} points`);
       } else {
-        console.log(`Incorrect. Expected: ${correctOptionText}, Got: ${userAnswer}`);
+        console.log(`Incorrect. Expected: "${correctOptionText}" (index ${correctOptionIndex}), Got: "${userAnswer}"`);
       }
     } else if (question.type === 'short-answer') {
       const correct = question.correctAnswer?.toString().toLowerCase().trim();
