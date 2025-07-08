@@ -59,6 +59,14 @@ const AssignmentBuilder: React.FC<AssignmentBuilderProps> = ({
   useEffect(() => {
     if (assignment) {
       setAssignmentData(assignment);
+    } else {
+      // Set default due date to 1 week from now
+      const defaultDueDate = new Date();
+      defaultDueDate.setDate(defaultDueDate.getDate() + 7);
+      setAssignmentData(prev => ({
+        ...prev,
+        dueDate: defaultDueDate.toISOString()
+      }));
     }
   }, [assignment]);
 
@@ -76,6 +84,14 @@ const AssignmentBuilder: React.FC<AssignmentBuilderProps> = ({
 
     if (!assignmentData.dueDate) {
       toast.error('Due date is required');
+      return;
+    }
+
+    // Validate that the due date is in the future
+    const dueDate = new Date(assignmentData.dueDate);
+    const now = new Date();
+    if (dueDate <= now) {
+      toast.error('Due date must be in the future');
       return;
     }
 
@@ -198,7 +214,13 @@ const AssignmentBuilder: React.FC<AssignmentBuilderProps> = ({
               <input
                 type="datetime-local"
                 value={assignmentData.dueDate ? new Date(assignmentData.dueDate).toISOString().slice(0, 16) : ''}
-                onChange={(e) => setAssignmentData(prev => ({ ...prev, dueDate: new Date(e.target.value).toISOString() }))}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setAssignmentData(prev => ({ ...prev, dueDate: new Date(e.target.value).toISOString() }));
+                  } else {
+                    setAssignmentData(prev => ({ ...prev, dueDate: '' }));
+                  }
+                }}
                 className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
