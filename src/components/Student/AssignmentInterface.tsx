@@ -185,7 +185,27 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
               <label key={index} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
                 <input
                   type="radio"
-                  name={question.id}
+                  name={`question_${question.id}`}
+                  value={option}
+                  checked={answer === option}
+                  onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                  disabled={!canEdit}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-gray-700">{option}</span>
+              </label>
+            ))}
+          </div>
+        );
+
+      case 'true-false':
+        return (
+          <div className="space-y-3">
+            {['True', 'False'].map((option) => (
+              <label key={option} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`question_${question.id}`}
                   value={option}
                   checked={answer === option}
                   onChange={(e) => handleAnswerChange(question.id, e.target.value)}
@@ -222,23 +242,26 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
           />
         );
 
-      case 'true-false':
+      case 'file-upload':
         return (
-          <div className="space-y-3">
-            {['True', 'False'].map((option) => (
-              <label key={option} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="radio"
-                  name={question.id}
-                  value={option}
-                  checked={answer === option}
-                  onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                  disabled={!canEdit}
-                  className="w-4 h-4 text-blue-600"
-                />
-                <span className="text-gray-700">{option}</span>
-              </label>
-            ))}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  handleAnswerChange(question.id, file.name);
+                }
+              }}
+              disabled={!canEdit}
+              className="hidden"
+              id={`file_${question.id}`}
+            />
+            <label htmlFor={`file_${question.id}`} className="cursor-pointer">
+              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-600">Click to upload a file</p>
+              {answer && <p className="text-sm text-green-600 mt-2">Uploaded: {answer}</p>}
+            </label>
           </div>
         );
 
@@ -608,7 +631,7 @@ const AssignmentInterface: React.FC<AssignmentInterfaceProps> = ({
             >
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  {currentQuestion.question}
+                  {currentQuestion.text}
                 </h2>
                 {renderQuestion(currentQuestion)}
               </div>

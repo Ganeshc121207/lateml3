@@ -216,45 +216,66 @@ export const getDraftSubmission = async (userId: string, assignmentId: string): 
 
 // Auto-grading - Only calculate score after deadline
 export const autoGradeSubmission = async (submission: AssignmentSubmission, assignment: Assignment): Promise<number> => {
-  // Don't calculate score if deadline hasn't passed or if it's not a final submission
-  const now = new Date();
-  const deadline = new Date(assignment.dueDate);
-  
-  if (now < deadline || !submission.isSubmitted) {
-    return 0; // Return 0 for drafts or before deadline
-  }
-  
   let totalPoints = 0;
   let earnedPoints = 0;
+
+  console.log('Auto-grading submission:', {
+    submissionId: submission.id,
+    answers: submission.answers,
+    questions: assignment.questions.length
+  });
 
   assignment.questions.forEach(question => {
     totalPoints += question.points;
     const userAnswer = submission.answers[question.id];
     
+    console.log(`Question ${question.id}:`, {
+      type: question.type,
+      userAnswer,
+      correctAnswer: question.correctAnswer,
+      points: question.points
+    });
+    
     if (question.type === 'multiple-choice') {
-      if (userAnswer === question.correctAnswer) {
+      // For multiple choice, compare the selected option text with the correct answer
+      const correctOptionIndex = question.correctAnswer;
+      const correctOptionText = question.options?.[correctOptionIndex as number];
+      
+      if (userAnswer === correctOptionText) {
         earnedPoints += question.points;
+        console.log(`Correct! Earned ${question.points} points`);
+      } else {
+        console.log(`Incorrect. Expected: ${correctOptionText}, Got: ${userAnswer}`);
       }
     } else if (question.type === 'short-answer') {
       const correct = question.correctAnswer?.toString().toLowerCase().trim();
       const user = userAnswer?.toString().toLowerCase().trim();
       if (correct === user) {
         earnedPoints += question.points;
+        console.log(`Correct! Earned ${question.points} points`);
+      } else {
+        console.log(`Incorrect. Expected: ${correct}, Got: ${user}`);
       }
+    } else if (question.type === 'essay' || question.type === 'file-upload') {
+      // These require manual grading
+      console.log(`Question type ${question.type} requires manual grading`);
     }
-    // Essay and file-upload questions require manual grading
   });
+
+  console.log(`Total points: ${totalPoints}, Earned points: ${earnedPoints}`);
 
   const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
   
   // Apply late penalty if applicable
   let finalScore = score;
-  if (submission.isLate && assignment.latePenalty) {
+  if (submission.isLate && assignment.latePenalty && submission.submittedAt) {
     const daysLate = Math.ceil((new Date(submission.submittedAt).getTime() - new Date(assignment.dueDate).getTime()) / (1000 * 60 * 60 * 24));
     const penalty = Math.min(assignment.latePenalty * daysLate, 100);
     finalScore = Math.max(0, score - penalty);
+    console.log(`Applied late penalty: ${penalty}%, Final score: ${finalScore}%`);
   }
 
+  console.log(`Final calculated score: ${finalScore}%`);
   return finalScore;
 };
 
