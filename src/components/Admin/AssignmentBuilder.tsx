@@ -21,6 +21,18 @@ import Modal from '../UI/Modal';
 import { Assignment, AssignmentQuestion } from '../../types/assignment';
 import toast from 'react-hot-toast';
 
+// Helper function to format date for datetime-local input without timezone issues
+const formatDateForInput = (isoString: string): string => {
+  if (!isoString) return '';
+  
+  const date = new Date(isoString);
+  // Get the timezone offset and adjust for it
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+  const localDate = new Date(date.getTime() - timezoneOffset);
+  
+  return localDate.toISOString().slice(0, 16);
+};
+
 interface AssignmentBuilderProps {
   assignment?: Assignment;
   onSave: (assignment: Assignment) => void;
@@ -63,6 +75,8 @@ const AssignmentBuilder: React.FC<AssignmentBuilderProps> = ({
       // Set default due date to 1 week from now
       const defaultDueDate = new Date();
       defaultDueDate.setDate(defaultDueDate.getDate() + 7);
+      // Set to end of day to avoid timezone issues
+      defaultDueDate.setHours(23, 59, 0, 0);
       setAssignmentData(prev => ({
         ...prev,
         dueDate: defaultDueDate.toISOString()
@@ -213,10 +227,12 @@ const AssignmentBuilder: React.FC<AssignmentBuilderProps> = ({
               </label>
               <input
                 type="datetime-local"
-                value={assignmentData.dueDate ? new Date(assignmentData.dueDate).toISOString().slice(0, 16) : ''}
+                value={assignmentData.dueDate ? formatDateForInput(assignmentData.dueDate) : ''}
                 onChange={(e) => {
                   if (e.target.value) {
-                    setAssignmentData(prev => ({ ...prev, dueDate: new Date(e.target.value).toISOString() }));
+                    // Create date in local timezone to avoid timezone offset issues
+                    const localDate = new Date(e.target.value);
+                    setAssignmentData(prev => ({ ...prev, dueDate: localDate.toISOString() }));
                   } else {
                     setAssignmentData(prev => ({ ...prev, dueDate: '' }));
                   }
