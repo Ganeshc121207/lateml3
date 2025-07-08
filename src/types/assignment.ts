@@ -9,7 +9,6 @@ export interface Assignment {
   dueDate: string;
   allowLateSubmission: boolean;
   latePenalty?: number; // percentage penalty per day late
-  maxAttempts: number;
   timeLimit?: number; // in minutes, 0 = unlimited
   isPublished: boolean;
   showAnswersAfterDeadline: boolean;

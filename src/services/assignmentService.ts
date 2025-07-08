@@ -216,12 +216,12 @@ export const getDraftSubmission = async (userId: string, assignmentId: string): 
 
 // Auto-grading - Only calculate score after deadline
 export const autoGradeSubmission = async (submission: AssignmentSubmission, assignment: Assignment): Promise<number> => {
-  // Don't calculate score if deadline hasn't passed
+  // Don't calculate score if deadline hasn't passed or if it's not a final submission
   const now = new Date();
   const deadline = new Date(assignment.dueDate);
   
-  if (now < deadline && !submission.isSubmitted) {
-    return 0; // Return 0 for drafts before deadline
+  if (now < deadline || !submission.isSubmitted) {
+    return 0; // Return 0 for drafts or before deadline
   }
   
   let totalPoints = 0;
@@ -263,15 +263,15 @@ export const calculateAssignmentResult = async (submission: AssignmentSubmission
   const now = new Date();
   const dueDate = new Date(assignment.dueDate);
   const deadlinePassed = now > dueDate;
-  const canViewAnswers = deadlinePassed && assignment.showAnswersAfterDeadline;
+  const canViewAnswers = deadlinePassed && assignment.showAnswersAfterDeadline && submission.isSubmitted;
 
   const feedback: AssignmentQuestionFeedback[] = assignment.questions.map(question => {
     const userAnswer = submission.answers[question.id];
     let isCorrect: boolean | undefined = undefined;
     let earnedPoints = 0;
     
-    // Only calculate correctness after deadline
-    if (deadlinePassed) {
+    // Only calculate correctness after deadline and for submitted assignments
+    if (deadlinePassed && submission.isSubmitted) {
       if (question.type === 'multiple-choice') {
         isCorrect = userAnswer === question.correctAnswer;
         earnedPoints = isCorrect ? question.points : 0;
@@ -288,12 +288,12 @@ export const calculateAssignmentResult = async (submission: AssignmentSubmission
     
     return {
       questionId: question.id,
-      isCorrect: deadlinePassed ? isCorrect : undefined,
+      isCorrect: (deadlinePassed && submission.isSubmitted) ? isCorrect : undefined,
       userAnswer,
       correctAnswer: canViewAnswers ? question.correctAnswer : undefined,
       explanation: canViewAnswers ? question.explanation : undefined,
       points: question.points,
-      earnedPoints: deadlinePassed ? earnedPoints : 0,
+      earnedPoints: (deadlinePassed && submission.isSubmitted) ? earnedPoints : 0,
       feedback: undefined // Will be added during manual grading
     };
   });
@@ -318,14 +318,6 @@ export const canSubmitAssignment = (assignment: Assignment, submissions: Assignm
   
   // Check if past due date and late submissions not allowed
   if (now > dueDate && !assignment.allowLateSubmission) {
-    return false;
-  }
-  
-  // Count only final submissions (not drafts)
-  const finalSubmissions = submissions.filter(s => s.isSubmitted);
-  
-  // Check if max attempts reached
-  if (finalSubmissions.length >= assignment.maxAttempts && assignment.maxAttempts > 0) {
     return false;
   }
   

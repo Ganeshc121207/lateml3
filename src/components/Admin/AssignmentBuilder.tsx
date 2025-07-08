@@ -57,7 +57,6 @@ const AssignmentBuilder: React.FC<AssignmentBuilderProps> = ({
     dueDate: '',
     allowLateSubmission: false,
     latePenalty: 10,
-    maxAttempts: 1,
     timeLimit: 0,
     isPublished: false,
     showAnswersAfterDeadline: true,
@@ -242,19 +241,7 @@ const AssignmentBuilder: React.FC<AssignmentBuilderProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-dark-300 mb-2">
-                Max Attempts
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={assignmentData.maxAttempts}
-                onChange={(e) => setAssignmentData(prev => ({ ...prev, maxAttempts: parseInt(e.target.value) || 1 }))}
-                className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
 
-            <div>
               <label className="block text-sm font-medium text-dark-300 mb-2">
                 Time Limit (minutes, 0 = unlimited)
               </label>
@@ -283,30 +270,33 @@ const AssignmentBuilder: React.FC<AssignmentBuilderProps> = ({
             </div>
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-dark-300 mb-2">
-              Description
-            </label>
-            <textarea
-              value={assignmentData.description}
-              onChange={(e) => setAssignmentData(prev => ({ ...prev, description: e.target.value }))}
-              className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-              rows={3}
-              placeholder="Enter assignment description"
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-dark-300 mb-2">
+                Instructions
+              </label>
+              <textarea
+                value={assignmentData.instructions}
+                onChange={(e) => setAssignmentData(prev => ({ ...prev, instructions: e.target.value }))}
+                className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                rows={3}
+                placeholder="Enter detailed instructions for students"
+              />
+            </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-dark-300 mb-2">
-              Instructions
-            </label>
-            <textarea
-              value={assignmentData.instructions}
-              onChange={(e) => setAssignmentData(prev => ({ ...prev, instructions: e.target.value }))}
-              className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-              rows={3}
-              placeholder="Enter detailed instructions for students"
-            />
+
+            <div>
+              <label className="block text-sm font-medium text-dark-300 mb-2">
+                Description
+              </label>
+              <textarea
+                value={assignmentData.description}
+                onChange={(e) => setAssignmentData(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-white placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                rows={3}
+                placeholder="Enter assignment description"
+              />
+            </div>
           </div>
 
           <div className="mt-4 flex items-center space-x-6">
