@@ -566,7 +566,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onSave, onCan
           </div>
         )}
 
-        {(questionData.type === 'short-answer') && (
+        {(questionData.type === 'short-answer' || questionData.type === 'essay') && (
           <div>
             <label className="block text-sm font-medium text-dark-300 mb-2">
               Correct Answer (for auto-grading)
