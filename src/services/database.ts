@@ -438,43 +438,63 @@ export const getUserNotifications = async (userId: string): Promise<Notification
 
 // Real-time listeners
 export const subscribeToProgressUpdates = (userId: string, courseId: string, callback: (progress: StudentProgress | null) => void) => {
-  const progressRef = doc(db, 'progress', `${userId}_${courseId}`);
-  
-  return onSnapshot(progressRef, (doc) => {
-    if (doc.exists()) {
-      const data = doc.data();
-      callback({
-        ...data,
-        lastAccessed: convertTimestamp(data.lastAccessed)
-      } as StudentProgress);
-    } else {
+  try {
+    const progressRef = doc(db, 'progress', `${userId}_${courseId}`);
+    
+    return onSnapshot(progressRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data();
+        callback({
+          ...data,
+          lastAccessed: convertTimestamp(data.lastAccessed)
+        } as StudentProgress);
+      } else {
+        callback(null);
+      }
+    }, (error) => {
+      console.warn('Progress subscription failed due to permissions:', error.message);
+      // Return null progress instead of throwing error
       callback(null);
-    }
-  }, (error) => {
-    console.error('Error in progress subscription:', error);
+      // Return empty unsubscribe function
+      return () => {};
+    });
+  } catch (error) {
+    console.warn('Failed to set up progress subscription:', error);
     callback(null);
-  });
+    // Return empty unsubscribe function
+    return () => {};
+  }
 };
 
 export const subscribeToNotifications = (userId: string, callback: (notifications: Notification[]) => void) => {
-  const q = query(
-    collection(db, 'notifications'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
-  );
-  
-  return onSnapshot(q, (querySnapshot) => {
-    const notifications = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: convertTimestamp(doc.data().createdAt)
-    })) as Notification[];
+  try {
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
     
-    callback(notifications);
-  }, (error) => {
-    console.error('Error in notifications subscription:', error);
+    return onSnapshot(q, (querySnapshot) => {
+      const notifications = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: convertTimestamp(doc.data().createdAt)
+      })) as Notification[];
+      
+      callback(notifications);
+    }, (error) => {
+      console.warn('Notifications subscription failed due to permissions:', error.message);
+      // Return empty notifications instead of throwing error
+      callback([]);
+      // Return empty unsubscribe function
+      return () => {};
+    });
+  } catch (error) {
+    console.warn('Failed to set up notifications subscription:', error);
     callback([]);
-  });
+    // Return empty unsubscribe function
+    return () => {};
+  }
 };
 
 // Analytics (mock data for now, can be enhanced with real analytics)
