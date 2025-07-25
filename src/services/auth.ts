@@ -29,19 +29,8 @@ const convertFirebaseUser = async (firebaseUser: FirebaseUser): Promise<User | n
       emailVerified: true, // Always true since we're removing verification
     };
   } catch (error) {
-    console.warn('Error accessing Firestore user data, using Firebase Auth data only:', error);
-    
-    // Fallback: create user object from Firebase Auth data only
-    return {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email || '',
-      displayName: firebaseUser.displayName || '',
-      role: 'student', // Default role when Firestore is inaccessible
-      photoURL: firebaseUser.photoURL || undefined,
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      emailVerified: true,
-    };
+    console.error('Error converting Firebase user:', error);
+    return null;
   }
 };
 
@@ -55,21 +44,14 @@ export const signIn = async (email: string, password: string): Promise<User> => 
       throw new Error('Failed to get user data');
     }
 
-    // Try to update last login, but don't fail if Firestore is inaccessible
-    try {
-      await setDoc(doc(db, 'users', user.uid), {
-        lastLogin: new Date().toISOString()
-      }, { merge: true });
-    } catch (firestoreError) {
-      console.warn('Could not update last login in Firestore:', firestoreError);
-    }
+    // Update last login
+    await setDoc(doc(db, 'users', user.uid), {
+      lastLogin: new Date().toISOString()
+    }, { merge: true });
 
     return user;
   } catch (error: any) {
     console.error('Sign in error:', error);
-    if (error.code === 'permission-denied') {
-      throw new Error('Database permissions not configured. Please check Firebase Security Rules.');
-    }
     throw new Error(error.message || 'Failed to sign in');
   }
 };
@@ -98,12 +80,8 @@ export const signUp = async (
       emailVerified: true, // Always true since we're removing verification
     };
 
-    // Try to save user data to Firestore, but don't fail if permissions are missing
-    try {
-      await setDoc(doc(db, 'users', userCredential.user.uid), userData);
-    } catch (firestoreError) {
-      console.warn('Could not save user data to Firestore:', firestoreError);
-    }
+    // Save user data to Firestore
+    await setDoc(doc(db, 'users', userCredential.user.uid), userData);
 
     return { 
       user: userData, 
@@ -111,9 +89,6 @@ export const signUp = async (
     };
   } catch (error: any) {
     console.error('Sign up error:', error);
-    if (error.code === 'permission-denied') {
-      throw new Error('Database permissions not configured. Please check Firebase Security Rules.');
-    }
     throw new Error(error.message || 'Failed to create account');
   }
 };
